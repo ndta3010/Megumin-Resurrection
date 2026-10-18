@@ -1,0 +1,9 @@
+# Local dependencies
+node_modules/
+venv/
+.venv/
+
+# Environment / OS Cache
+.DS_Store
+*.log
+__pycache__/

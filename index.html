@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Megumin</title>
+    <style>
+        /* ==========================================
+           1. BASE SETUP & LAYOUT
+           ========================================== */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('background2.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+            transition: background 0.2s ease;
+        }
+
+        #live2d-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            -webkit-app-region: no-drag;
+        }
+
+        /* ==========================================
+           CUSTOM WINDOW TITLE BAR
+           ========================================== */
+        #custom-title-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 32px;
+            background: rgba(20, 20, 25, 0.9);
+            border-bottom: 1px solid rgba(255, 71, 87, 0.4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            box-sizing: border-box;
+            z-index: 100000;
+            -webkit-app-region: drag;
+        }
+
+        .title-bar-left { font-size: 13px; font-weight: bold; color: #ff4757; letter-spacing: 1px; }
+        .title-bar-actions { display: flex; height: 100%; -webkit-app-region: no-drag; }
+        .title-btn { background: transparent; border: none; color: #ced6e0; width: 45px; height: 100%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background 0.2s, color 0.2s; }
+        .title-btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+        .title-btn.close-btn:hover { background: #ff4757; color: white; }
+
+        /* ==========================================
+           2. UI PANELS & COMPONENTS
+           ========================================== */
+        .ui-panel { position: absolute; background: rgba(20, 20, 25, 0.85); border: 1px solid rgba(255, 71, 87, 0.4); border-radius: 12px; padding: 15px; z-index: 10; box-shadow: 0 8px 24px rgba(0,0,0,0.6); backdrop-filter: blur(5px); -webkit-app-region: no-drag; }
+        .panel-title { margin: 0 0 10px 0; font-size: 1em; text-transform: uppercase; color: #ff4757; border-bottom: 1px solid rgba(255, 71, 87, 0.3); padding-bottom: 5px; text-align: center; }
+        .btn { width: 100%; padding: 8px; margin-top: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; transition: background 0.2s, transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-green { background: #2ed573; } .btn-green:hover { background: #26de81; }
+        .btn-purple { background: #a55eea; } .btn-purple:hover { background: #8854d0; }
+        .btn-dark { background: #2d3436; border: 1px solid #ff4757; color: #ffeb3b; } .btn-dark:hover { background: #353b48; }
+        .btn-red { background: #ff4757; } .btn-red:hover { background: #ff6b81; }
+        .btn-gray { background: #555; } .btn-gray:hover { background: #777; }
+
+        .slider-group { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 0.9em; }
+        input[type=range] { flex-grow: 1; accent-color: #ff4757; cursor: pointer; }
+
+        #clock-panel { top: 52px; left: 20px; min-width: 160px; text-align: center; }
+        #time-display { font-size: 2.2em; font-weight: bold; margin: 0; color: #ff4757; text-shadow: 0 0 10px rgba(255, 71, 87, 0.5); letter-spacing: 2px; }
+        #date-display { font-size: 0.9em; margin-top: 5px; color: #ced6e0; text-transform: uppercase; }
+
+        #options-panel { top: 52px; right: 20px; width: 220px; }
+        #alarm-status { font-size: 11px; margin-top: 5px; color: #ffeb3b; text-align: center; word-wrap: break-word; }
+
+        #chat-panel { bottom: 20px; left: 20px; width: 320px; display: flex; flex-direction: column; gap: 10px; }
+        #chat-history { height: 180px; background: rgba(0, 0, 0, 0.5); border-radius: 8px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.9em; scroll-behavior: smooth; }
+        .chat-bubble { padding: 8px 12px; border-radius: 12px; max-width: 85%; word-wrap: break-word; line-height: 1.4; }
+        .msg-user { background: #2f3542; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-megu { background: #ff4757; color: white; align-self: flex-start; border-bottom-left-radius: 2px; box-shadow: 0 2px 8px rgba(255, 71, 87, 0.3); }
+        #chat-input-area { display: flex; gap: 8px; }
+        #chat-input { flex-grow: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid #57606f; background: rgba(255,255,255,0.1); color: white; outline: none; transition: border-color 0.2s; }
+        #chat-input:focus { border-color: #ff4757; }
+        #send-button { background: #ff4757; color: white; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        #send-button:hover { background: #ff6b81; }
+
+        /* ==========================================
+           3. CHIBI PET MODE
+           ========================================== */
+        #chibi-container { 
+            display: none; position: fixed; bottom: 20px; right: 20px; width: 150px; height: auto; z-index: 9999; -webkit-app-region: drag;
+        }
+        #chibi-model { width: 150px; height: auto; pointer-events: auto; display: block; }
+        #close-chibi { position: absolute; top: -8px; right: -8px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-weight: bold; cursor: pointer; z-index: 10000; -webkit-app-region: no-drag; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+
+        /* ==========================================
+           UNIVERSAL CHAT BUBBLE (Chibi & Companion)
+           ========================================== */
+        #chibi-chat-bubble {
+            position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px);
+            margin-bottom: 10px; background: rgba(255, 71, 87, 0.95); color: white; padding: 8px 12px;
+            border-radius: 12px; font-size: 12px; font-weight: bold; width: 140px; text-align: center;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.5); opacity: 0; transition: all 0.3s ease-in-out;
+            pointer-events: none; z-index: 10000;
+        }
+        #chibi-chat-bubble::after {
+            content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+            border-width: 8px 8px 0 8px; border-style: solid; border-color: rgba(255, 71, 87, 0.95) transparent transparent transparent;
+        }
+        #chibi-chat-bubble.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        /* Chibi overrides */
+        body.chibi-mode { background: transparent !important; }
+        body.chibi-mode #chibi-container { display: block !important; }
+
+        /* ==========================================
+           4. ON-SITE COMPANION MODE (TRUE DESKTOP MATE)
+           ========================================== */
+        body.companion-mode {
+            background: transparent !important;
+            overflow: hidden;
+        }
+
+        body.companion-mode #custom-title-bar,
+        body.companion-mode #clock-panel,
+        body.companion-mode #options-panel,
+        body.companion-mode #chat-panel,
+        body.companion-mode #chibi-container {
+            display: none !important;
+        }
+
+        body.companion-mode #live2d-canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            -webkit-app-region: no-drag !important; 
+        }
+
+        body.companion-mode #chibi-chat-bubble {
+            display: block !important;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -150%);
+            width: 200px;
+            font-size: 14px;
+        }
+
+        #exit-companion-btn {
+            display: none;
+            position: fixed !important;
+            top: 12px;
+            right: 12px;
+            z-index: 999999 !important;
+            pointer-events: auto !important;
+            -webkit-app-region: no-drag !important;
+            background: rgba(255, 71, 87, 0.95);
+            color: white;
+            border: 1px solid white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        #exit-companion-btn:hover {
+            background: #ff6b81;
+            transform: scale(1.05);
+        }
+
+        body.companion-mode #exit-companion-btn {
+            display: block !important;
+        }
+
+        /* Modals */
+        #alarm-modal, #alarm-triggered-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(20, 20, 25, 0.95); padding: 20px; border-radius: 12px; z-index: 9998; color: white; width: 300px; border: 2px solid #ff4757; box-shadow: 0 0 25px rgba(0,0,0,0.9); -webkit-app-region: no-drag; }
+        #ringtone-list { max-height: 150px; overflow-y: auto; margin-top: 5px; background: rgba(0,0,0,0.5); border-radius: 4px; padding: 5px; border: 1px solid #444; }
+        .ringtone-item { padding: 8px; cursor: pointer; border-bottom: 1px solid #333; transition: background 0.2s; font-size: 14px; }
+        .ringtone-item:hover { background: rgba(255, 71, 87, 0.2); }
+    </style>
+</head>
+<body>
+
+    <div id="custom-title-bar">
+        <div class="title-bar-left">MEGUMIN</div>
+        <div class="title-bar-actions">
+            <button id="win-minimize-btn" class="title-btn">—</button>
+            <button id="win-maximize-btn" class="title-btn">⬜</button>
+            <button id="win-close-btn" class="title-btn close-btn">✕</button>
+        </div>
+    </div>
+
+    <canvas id="live2d-canvas"></canvas>
+    
+    <button id="exit-companion-btn">Exit Companion Mode</button>
+
+    <div id="chibi-container">
+        <!-- Chibi Chat Bubble nested inside container for accurate relative positioning -->
+        <div id="chibi-chat-bubble">Explosion!</div>
+        <img src="chibi.png" id="chibi-model" alt="Chibi Megumin">
+        <button id="close-chibi">X</button>
+    </div>
+
+    <div id="clock-panel" class="ui-panel">
+        <div id="time-display">00:00</div>
+        <div id="date-display">Loading...</div>
+    </div>
+
+    <div id="options-panel" class="ui-panel">
+        <h3 class="panel-title">Settings</h3>
+        <div class="slider-group">
+            <span>🔊</span>
+            <input type="range" id="volumeSlider" min="0" max="100" value="50">
+            <span id="vol-readout">50%</span>
+        </div>
+        
+        <button id="alarm-trigger-btn" class="btn btn-dark">⏰ Set Alarm</button>
+        <div id="alarm-status">No alarm set</div>
+        
+        <button id="companionModeBtn" class="btn btn-green">On-Site Companion Mode</button>
+        <button id="chibiModeBtn" class="btn btn-purple">Chibi Pet Mode</button>
+    </div>
+
+    <div id="chat-panel" class="ui-panel">
+        <h3 class="panel-title" style="margin-bottom: 0;">Chat with Megumin</h3>
+        <div id="chat-history"></div>
+        <div id="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Say something..." autocomplete="off">
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+
+    <div id="alarm-modal">
+        <h3 class="panel-title" style="border:none; margin-bottom: 15px;">Explosion Alarm</h3>
+        <label for="modal-alarm-time" style="font-size: 14px;">Detonation Time:</label>
+        <input type="time" id="modal-alarm-time" style="width: 100%; box-sizing: border-box; margin-top: 5px; margin-bottom: 15px; padding: 8px; border-radius: 4px; border: none; background: #333; color: white; font-family: inherit;">
+        <label style="font-size: 14px;">Select Ringtone:</label>
+        <div id="ringtone-list"></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 20px; gap: 10px;">
+            <button id="cancel-alarm-btn" class="btn btn-gray" style="margin-top: 0;">Cancel</button>
+            <button id="confirm-alarm-btn" class="btn btn-red" style="margin-top: 0;">Confirm</button>
+        </div>
+    </div>
+
+    <div id="alarm-triggered-modal">
+        <h2 style="color: #ff4757; text-align: center; margin-top: 0;">💥 DETONATION! 💥</h2>
+        <p style="text-align: center; font-size: 14px;">Wake up! The explosions wait for no one!</p>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button id="snooze-btn" class="btn btn-dark" style="margin-top: 0; color: white;">Snooze (5m)</button>
+            <button id="turn-off-btn" class="btn btn-red" style="margin-top: 0;">Turn Off</button>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const fs = require('fs');
+        const path = require('path');
+
+        let activeAlarmTime = null;
+        let alarmFired = false;
+        let selectedRingtonePath = null;
+        
+        let previewAudio = new Audio();
+        let finalAlarm = new Audio();
+        finalAlarm.crossOrigin = "anonymous"; 
+        
+        const audioDirectory = path.join(__dirname, 'sound', 'AudioClip');
+        const alarmStatus = document.getElementById('alarm-status');
+
+        document.getElementById('win-minimize-btn').addEventListener('click', () => ipcRenderer.send('window-minimize'));
+        document.getElementById('win-maximize-btn').addEventListener('click', () => ipcRenderer.send('window-maximize'));
+        document.getElementById('win-close-btn').addEventListener('click', () => ipcRenderer.send('window-close'));
+
+        /* Chat Handlers */
+        function addChatMessage(className, text) {
+            const chatHistory = document.getElementById('chat-history');
+            if (!chatHistory) return;
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${className}`;
+            bubble.textContent = text;
+            chatHistory.appendChild(bubble);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function resizeLive2DCanvas() {
+            const canvas = document.getElementById('live2d-canvas');
+            if (!canvas) return;
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            if (window.live2dApp && window.live2dApp.renderer) {
+                window.live2dApp.renderer.resize(window.innerWidth, window.innerHeight);
+            }
+
+            if (window.meguminModel) {
+                window.meguminModel.x = window.innerWidth / 2;
+                if (document.body.classList.contains('companion-mode')) {
+                    window.meguminModel.y = (window.innerHeight / 2) + 50; 
+                    if (window.meguminModel.scale) window.meguminModel.scale.set(0.12);
+                } else {
+                    window.meguminModel.y = (window.innerHeight / 2) + 120;
+                    if (window.meguminModel.scale) window.meguminModel.scale.set(0.28);
+                }
+            }
+        }
+        window.addEventListener('resize', resizeLive2DCanvas);
+
+        /* Mode Switchers */
+        const chibiContainer = document.getElementById('chibi-container');
+
+        document.getElementById('chibiModeBtn').addEventListener('click', () => {
+            document.body.classList.remove('companion-mode');
+            document.body.classList.add('chibi-mode'); 
+            
+            ipcRenderer.send('minimize-to-chibi'); 
+            
+            document.getElementById('custom-title-bar').style.display = 'none';
+            document.getElementById('live2d-canvas').style.display = 'none';
+            document.getElementById('clock-panel').style.display = 'none';
+            document.getElementById('options-panel').style.display = 'none';
+            document.getElementById('chat-panel').style.display = 'none';
+            
+            chibiContainer.style.display = 'block';
+        });
+
+        document.getElementById('close-chibi').addEventListener('click', () => {
+            document.body.classList.remove('chibi-mode'); 
+            ipcRenderer.send('restore-main-window'); 
+            
+            chibiContainer.style.display = 'none';
+            document.getElementById('custom-title-bar').style.display = 'flex';
+            document.getElementById('live2d-canvas').style.display = 'block';
+            document.getElementById('clock-panel').style.display = 'block';
+            document.getElementById('options-panel').style.display = 'block';
+            document.getElementById('chat-panel').style.display = 'flex';
+
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
+        });
+
+        /* ON-SITE COMPANION MODE LOGIC */
+        document.getElementById('companionModeBtn').addEventListener('click', () => {
+            document.body.classList.remove('chibi-mode');
+            document.body.classList.add('companion-mode');
+            
+            document.getElementById('custom-title-bar').style.display = 'none';
+            document.getElementById('clock-panel').style.display = 'none';
+            document.getElementById('options-panel').style.display = 'none';
+            document.getElementById('chat-panel').style.display = 'none';
+            chibiContainer.style.display = 'none';
+
+            ipcRenderer.send('enter-companion-mode');
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
+        });
+
+        document.getElementById('exit-companion-btn').addEventListener('click', () => {
+            document.body.classList.remove('companion-mode');
+            ipcRenderer.send('restore-main-window'); 
+            
+            document.getElementById('custom-title-bar').style.display = 'flex';
+            document.getElementById('clock-panel').style.display = 'block';
+            document.getElementById('options-panel').style.display = 'block';
+            document.getElementById('chat-panel').style.display = 'flex';
+
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
+        });
+
+        /* Clock & Alarm Handlers */
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('time-display').textContent = now.toLocaleTimeString('en-US', { hour12: false });
+            document.getElementById('date-display').textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+            if (activeAlarmTime && !alarmFired) {
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                if (currentTime === activeAlarmTime) {
+                    alarmFired = true; 
+                    alarmStatus.textContent = "💥 DETONATING! 💥";
+                    alarmStatus.style.color = "#ff4757";
+                    finalAlarm.volume = document.getElementById('volumeSlider').value / 100;
+                    finalAlarm.loop = true; 
+
+                    // 🎯 1. Reset Megumin to Energetic motion immediately (opens eyes)
+                    if (window.meguModel) {
+                        window.meguModel.internalModel?.motionManager?.stopAllMotions();
+                        window.meguModel.motion('Energetic', 0, 3);
+                    }
+
+                    // 🎯 2. Enable the alarm override flag
+                    window.isAlarmRinging = true;
+
+                    // 🎯 3. Connect finalAlarm to Web Audio Analyser (if not already attached)
+                    if (!finalAlarm._hasAnalyser) {
+                        try {
+                            const AudioContext = window.AudioContext || window.webkitAudioContext;
+                            const audioCtx = new AudioContext();
+                            const analyser = audioCtx.createAnalyser();
+                            analyser.fftSize = 256;
+
+                            const source = audioCtx.createMediaElementSource(finalAlarm);
+                            source.connect(analyser);
+                            analyser.connect(audioCtx.destination);
+
+                            finalAlarm._analyser = analyser;
+                            finalAlarm._audioCtx = audioCtx;
+                            finalAlarm._hasAnalyser = true;
+                        } catch (e) {
+                            console.warn("AudioContext error on alarm setup:", e);
+                        }
+                    }
+
+                    // 🎯 4. Continuous lip-sync frame loop for the alarm
+                    const updateAlarmLipSync = () => {
+                        if (window.isAlarmRinging && !finalAlarm.paused) {
+                            if (finalAlarm._audioCtx && finalAlarm._audioCtx.state === 'suspended') {
+                                finalAlarm._audioCtx.resume();
+                            }
+                            if (finalAlarm._analyser) {
+                                const dataArray = new Uint8Array(finalAlarm._analyser.frequencyBinCount);
+                                finalAlarm._analyser.getByteFrequencyData(dataArray);
+
+                                let sum = 0;
+                                for (let i = 0; i < dataArray.length; i++) {
+                                    sum += dataArray[i];
+                                }
+                                const average = sum / dataArray.length;
+                                window.meguMouthValue = Math.min(1.0, (average / 128) * 1.5);
+                            }
+                            requestAnimationFrame(updateAlarmLipSync);
+                        } else {
+                            window.meguMouthValue = 0;
+                            window.isAlarmRinging = false;
+                        }
+                    };
+
+                    finalAlarm.play().then(() => {
+                        updateAlarmLipSync(); // 🎯 Start lip-sync loop once audio plays
+                    }).catch(e => console.error("Alarm playback error:", e));
+                    
+                    document.getElementById('alarm-triggered-modal').style.display = 'block';
+                    addChatMessage("msg-megu", "EXPLOSION!!! Time to wake up!!");
+                }
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock(); 
+
+        document.getElementById('snooze-btn').addEventListener('click', () => {
+            finalAlarm.pause(); 
+            finalAlarm.currentTime = 0;
+            
+            // 🛑 Stop Alarm Lip Sync
+            window.isAlarmRinging = false;
+            window.meguMouthValue = 0;
+
+            document.getElementById('alarm-triggered-modal').style.display = 'none';
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 5); 
+            activeAlarmTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            alarmFired = false; 
+            alarmStatus.textContent = `Snoozed to ${activeAlarmTime}`;
+        });
+
+        document.getElementById('turn-off-btn').addEventListener('click', () => {
+            finalAlarm.pause(); 
+            finalAlarm.currentTime = 0;
+
+            // 🛑 Stop Alarm Lip Sync
+            window.isAlarmRinging = false;
+            window.meguMouthValue = 0;
+
+            document.getElementById('alarm-triggered-modal').style.display = 'none';
+            activeAlarmTime = null;
+            alarmStatus.textContent = "No alarm set";
+        });
+
+        const alarmModal = document.getElementById('alarm-modal');
+        const ringtoneList = document.getElementById('ringtone-list');
+
+        document.getElementById('alarm-trigger-btn').addEventListener('click', () => { alarmModal.style.display = 'block'; loadRingtones(); });
+        document.getElementById('cancel-alarm-btn').addEventListener('click', () => { alarmModal.style.display = 'none'; previewAudio.pause(); });
+
+        function loadRingtones() {
+            ringtoneList.innerHTML = ''; 
+            if (fs.existsSync(audioDirectory)) {
+                const files = fs.readdirSync(audioDirectory).filter(f => f.endsWith('.wav') || f.endsWith('.ogg'));
+                if(files.length === 0) return ringtoneList.innerHTML = '<div style="color:#ccc; padding:10px;">No audio files found.</div>';
+
+                files.forEach(file => {
+                    const item = document.createElement('div');
+                    item.className = 'ringtone-item';
+                    item.textContent = file;
+                    item.onclick = () => {
+                        Array.from(ringtoneList.children).forEach(c => { c.style.background = 'transparent'; c.style.color = 'white'; });
+                        item.style.background = '#ff4757'; item.style.color = '#fff';
+                        selectedRingtonePath = path.join(audioDirectory, file);
+                        previewAudio.src = selectedRingtonePath;
+                        previewAudio.volume = document.getElementById('volumeSlider').value / 100;
+                        previewAudio.play().catch(e => console.error(e));
+                    };
+                    ringtoneList.appendChild(item);
+                });
+            }
+        }
+
+        document.getElementById('confirm-alarm-btn').addEventListener('click', () => {
+            const timeInput = document.getElementById('modal-alarm-time').value;
+            if (!timeInput || !selectedRingtonePath) return alert("Please select a time and ringtone!");
+            finalAlarm.src = selectedRingtonePath;
+            activeAlarmTime = timeInput;
+            alarmFired = false; 
+            alarmStatus.textContent = `Set: ${activeAlarmTime}`;
+            alarmModal.style.display = 'none';
+            previewAudio.pause(); 
+        });
+
+        const volumeSlider = document.getElementById('volumeSlider');
+        volumeSlider.addEventListener('input', (e) => {
+            const vol = e.target.value / 100;
+            document.getElementById('vol-readout').textContent = `${e.target.value}%`;
+            previewAudio.volume = vol; finalAlarm.volume = vol; 
+        });
+
+        /* Direct Live2D Model Initializer */
+        const defaultModelPath = './model/Character.model3.json';
+        window.onload = () => {
+            if (window.swapMegumin) {
+                window.swapMegumin(defaultModelPath);
+            }
+        };
+
+        const chibiQuotes = [
+            "My name is Megumin! The foremost magic user of the Crimson Demon Clan!",
+            "EXPLOSION!!!",
+            "I must unleash my magic at least once a day, or I'll feel sick...",
+            "Darkness blacker than black and darker than dark...",
+            "Do you want to walk the path of explosions with me?"
+        ];
+
+        function triggerMeguChatter() {
+            if (!document.body.classList.contains('chibi-mode')) return;
+            const bubble = document.getElementById('chibi-chat-bubble');
+            if (bubble) {
+                bubble.textContent = chibiQuotes[Math.floor(Math.random() * chibiQuotes.length)];
+                bubble.classList.add('show');
+                setTimeout(() => bubble.classList.remove('show'), 6000);
+            }
+        }
+        setTimeout(() => { triggerMeguChatter(); setInterval(triggerMeguChatter, 25000); }, 3000);
+    </script>
+    <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "c001_f_costume_kouma.moc3",
+    "Textures": [
+      "textures/texture_00.png",
+      "textures/texture_01.png"
+    ],
+    "Physics": null,
+    "Expressions": [
+      { "Name": "Tojime", "File": "motions/06_tojime.exp3.json" },
+      { "Name": "Normal", "File": "motions/00_nomal.exp3.json" },
+      { "Name": "Fun", "File": "motions/02_fun.exp3.json" },
+      { "Name": "Sad", "File": "motions/04_sad.exp3.json" },
+      { "Name": "Tere", "File": "motions/07_tere.exp3.json" },
+      { "Name": "Angry", "File": "motions/01_angry.exp3.json" }
+      
+      
+    ],
+    "Motions": {
+      "Idle": [
+        { "File": "motions/I_idling_motion_01.motion3.json" }
+      ],
+      "Neutral": [
+        { "File": "motions/I_repeat_motion_01.motion3.json" }
+      ],
+      "Happy": [
+        { "File": "motions/I_fun_motion_01.motion3.json" }
+      ],
+      "Sad": [
+        { "File": "motions/I_f_sad__motion_01.motion3.json" }
+      ],
+      "Shy": [
+        { "File": "motions/I_f_sad__motion_01.motion3.json" }
+      ],
+      "Energetic": [
+        { "File": "motions/I_angry_motion_01.motion3.json" },
+        { "File": "motions/I_f_surprised_motion_01.motion3.json" }
+      ]
+    }
+  },
+  "Groups": []
+}

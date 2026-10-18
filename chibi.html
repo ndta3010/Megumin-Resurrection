@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            
+            /* 🔴 THIS IS THE MAGIC DRAGGING CODE */
+            -webkit-app-region: drag; 
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #chibi-image {
+            width: 100%;
+            height: auto;
+            /* Prevents the image from "ghosting" when you try to drag it */
+            -webkit-user-drag: none; 
+        }
+
+        #restore-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+            
+            /* Buttons must be 'no-drag' so Windows lets you click them instead of moving the window */
+            -webkit-app-region: no-drag; 
+        }
+    </style>
+</head>
+<body>
+    
+    <img id="chibi-image" src="chibi.png" alt="Chibi">
+
+    <button id="restore-btn">X</button>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        // Tell main.js to swap the windows back!
+        document.getElementById('restore-btn').addEventListener('click', () => {
+            ipcRenderer.send('restore-main');
+        });
+    </script>
+</body>
+</html>
