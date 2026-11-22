@@ -95,3 +95,4 @@ pip install tensorflow tensorflow-hub sounddevice numpy
 * **Periodic Screen Reactions:** Every 15 minutes, she uses the Vision model (VLM) to observe and comment on what you are doing on your screen.
 * **Companion Mode:** Click and drag her freely anywhere across your desktop workspace.
 * **Chibi Mode:** Shrink her into a compact chibi form to save screen space without completely closing the app.
+* **Notification Detection:** Automatically detects incoming system/desktop notifications (using YAMNet audio classification) so she can alert and react to them in real time.
