@@ -95,3 +95,4 @@ pip install tensorflow tensorflow-hub sounddevice numpy
 * **Phản ứng màn hình định kỳ:** Mỗi 15 phút, cô ấy sẽ sử dụng Vision model (VLM) để quan sát và đưa ra nhận xét về những gì bạn đang làm trên màn hình.
 * **Chế độ Companion:** Bạn có thể kéo thả cô ấy tự do đến bất kỳ vị trí nào trên màn hình.
 * **Chế độ Chibi:** Thu nhỏ cô ấy thành dạng chibi gọn gàng để tiết kiệm không gian màn hình mà không cần đóng ứng dụng.
+* **Nhận Diện Thông Báo:** Tự động phát hiện thông báo hệ thống/máy tính (thông qua phân loại âm thanh YAMNet) để phản ứng và nhắc nhở bạn theo thời gian thực.
